@@ -24,6 +24,52 @@ tick_handler(struct tm *tick_time, TimeUnits units_changed)
  * @param layer Layer to update
  * @param context Graphics context to use during update
  */
+void layer_update_tz_2(Layer *layer, GContext *context)
+{
+  GFont font = fonts_get_system_font(FONT_KEY);
+
+  uint8_t square_face_positions_buffer[12][2];
+  square_face_positions(FONT_SIZE, 28, 28, square_face_positions_buffer);
+
+  for (uint8_t i = 1; i <= 12; i++)
+  {
+    uint8_t x_coord = square_face_positions_buffer[i - 1][0];
+    uint8_t y_coord = square_face_positions_buffer[i - 1][1];
+
+    char digits[3];
+    pbl_itoa(((i + 2) % 12) + 1, digits, 10);
+    graphics_draw_text(context, digits, font, GRect(x_coord, y_coord, FONT_SIZE, FONT_SIZE), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+  }
+}
+
+/**
+ * Update the border hours
+ * @param layer Layer to update
+ * @param context Graphics context to use during update
+ */
+void layer_update_tz_1(Layer *layer, GContext *context)
+{
+  GFont font = fonts_get_system_font(FONT_KEY);
+
+  uint8_t square_face_positions_buffer[12][2];
+  square_face_positions(FONT_SIZE, 14, 14, square_face_positions_buffer);
+
+  for (uint8_t i = 1; i <= 12; i++)
+  {
+    uint8_t x_coord = square_face_positions_buffer[i - 1][0];
+    uint8_t y_coord = square_face_positions_buffer[i - 1][1];
+
+    char digits[3];
+    pbl_itoa(((i + 5) % 12) + 1, digits, 10);
+    graphics_draw_text(context, digits, font, GRect(x_coord, y_coord, FONT_SIZE, FONT_SIZE), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+  }
+}
+
+/**
+ * Update the border hours
+ * @param layer Layer to update
+ * @param context Graphics context to use during update
+ */
 void layer_update_main_tz(Layer *layer, GContext *context)
 {
   GFont font = fonts_get_system_font(FONT_KEY);
@@ -55,8 +101,16 @@ static void main_window_load(Window *window)
   main_tz = layer_create(bounds);
   layer_set_update_proc(main_tz, layer_update_main_tz);
 
+  tz1 = layer_create(bounds);
+  layer_set_update_proc(tz1, layer_update_tz_1);
+
+  tz2 = layer_create(bounds);
+  layer_set_update_proc(tz2, layer_update_tz_2);
+
   dial = layer_create(bounds);
   layer_add_to_layer(main_tz, dial);
+  layer_add_to_layer(tz1, dial);
+  layer_add_to_layer(tz2, dial);
   layer_add_to_layer(dial, background);
 
   layer_add_to_window(background, window);
