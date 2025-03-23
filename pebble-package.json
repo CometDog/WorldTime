@@ -1,0 +1,9 @@
+{
+    "dependencies": {
+        "debug-tick-timer-service": "0.0.1",
+        "pebble-assist": "0.2.3",
+        "pbl-display": "0.0.1",
+        "pbl-stdlib": "0.0.1",
+        "pbl-math": "0.0.1"
+    }
+}
