@@ -4,7 +4,6 @@
 #include "@pebble-libraries/pbl-display/pbl-display.h"
 #include "@pebble-libraries/pbl-math/pbl-math.h"
 
-#define RADIUS 6
 #define FONT_KEY "FONT_KEY_GOTHIC_14"
 #define FONT_SIZE 14
 #define DIAL_INSET FONT_SIZE
@@ -19,6 +18,37 @@ tick_handler(struct tm *tick_time, TimeUnits units_changed)
 {
 }
 
+void draw_hours(uint64_t inset, uint8_t digit_shift, GColor color, GContext *context)
+{
+  GFont font = fonts_get_system_font(FONT_KEY);
+
+  uint8_t square_face_positions_buffer[12][2];
+  square_face_positions(FONT_SIZE, inset, inset, square_face_positions_buffer);
+
+  for (uint8_t i = 0; i < 12; i++)
+  {
+    uint8_t x_coord = square_face_positions_buffer[i][0];
+    uint8_t y_coord = square_face_positions_buffer[i][1];
+
+    char digits[3];
+    pbl_itoa(((i + digit_shift) % 12) + 1, digits, 10);
+    graphics_context_set_text_color(context, color);
+    graphics_draw_text(context, digits, font, GRect(x_coord, y_coord, FONT_SIZE, FONT_SIZE), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+  }
+}
+
+void layer_update_inner_dial(Layer *layer, GContext *context)
+{
+  graphics_context_set_fill_color(context, GColorWhite);
+  graphics_fill_rect(context, GRect(30, 30, DISPLAY_WIDTH - 56, DISPLAY_HEIGHT - 56), 6, GCornersAll);
+
+  graphics_context_set_stroke_color(context, GColorBlack);
+  graphics_context_set_stroke_width(context, 3);
+  graphics_draw_line(context, GPoint(DISPLAY_CENTER_X, DISPLAY_CENTER_Y), GPoint(DISPLAY_CENTER_X, DISPLAY_CENTER_Y - 25));
+  graphics_context_set_stroke_width(context, 3);
+  graphics_draw_line(context, GPoint(DISPLAY_CENTER_X, DISPLAY_CENTER_Y), GPoint(DISPLAY_CENTER_X - 40, DISPLAY_CENTER_Y));
+}
+
 /**
  * Update the border hours
  * @param layer Layer to update
@@ -26,20 +56,7 @@ tick_handler(struct tm *tick_time, TimeUnits units_changed)
  */
 void layer_update_tz_2(Layer *layer, GContext *context)
 {
-  GFont font = fonts_get_system_font(FONT_KEY);
-
-  uint8_t square_face_positions_buffer[12][2];
-  square_face_positions(FONT_SIZE, 28, 28, square_face_positions_buffer);
-
-  for (uint8_t i = 1; i <= 12; i++)
-  {
-    uint8_t x_coord = square_face_positions_buffer[i - 1][0];
-    uint8_t y_coord = square_face_positions_buffer[i - 1][1];
-
-    char digits[3];
-    pbl_itoa(((i + 2) % 12) + 1, digits, 10);
-    graphics_draw_text(context, digits, font, GRect(x_coord, y_coord, FONT_SIZE, FONT_SIZE), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-  }
+  draw_hours(0, 9, GColorWhite, context);
 }
 
 /**
@@ -49,20 +66,7 @@ void layer_update_tz_2(Layer *layer, GContext *context)
  */
 void layer_update_tz_1(Layer *layer, GContext *context)
 {
-  GFont font = fonts_get_system_font(FONT_KEY);
-
-  uint8_t square_face_positions_buffer[12][2];
-  square_face_positions(FONT_SIZE, 14, 14, square_face_positions_buffer);
-
-  for (uint8_t i = 1; i <= 12; i++)
-  {
-    uint8_t x_coord = square_face_positions_buffer[i - 1][0];
-    uint8_t y_coord = square_face_positions_buffer[i - 1][1];
-
-    char digits[3];
-    pbl_itoa(((i + 5) % 12) + 1, digits, 10);
-    graphics_draw_text(context, digits, font, GRect(x_coord, y_coord, FONT_SIZE, FONT_SIZE), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-  }
+  draw_hours(14, 11, GColorWhite, context);
 }
 
 /**
@@ -72,20 +76,7 @@ void layer_update_tz_1(Layer *layer, GContext *context)
  */
 void layer_update_main_tz(Layer *layer, GContext *context)
 {
-  GFont font = fonts_get_system_font(FONT_KEY);
-
-  uint8_t square_face_positions_buffer[12][2];
-  square_face_positions(FONT_SIZE, 0, 0, square_face_positions_buffer);
-
-  for (uint8_t i = 1; i <= 12; i++)
-  {
-    uint8_t x_coord = square_face_positions_buffer[i - 1][0];
-    uint8_t y_coord = square_face_positions_buffer[i - 1][1];
-
-    char digits[3];
-    pbl_itoa(i, digits, 10);
-    graphics_draw_text(context, digits, font, GRect(x_coord, y_coord, FONT_SIZE, FONT_SIZE), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
-  }
+  draw_hours(28, 0, GColorBlack, context);
 }
 
 /**
@@ -104,14 +95,31 @@ static void main_window_load(Window *window)
   tz1 = layer_create(bounds);
   layer_set_update_proc(tz1, layer_update_tz_1);
 
+  tz1_label = text_layer_create(GRect(0, 14, 28, 14));
+  text_layer_set_background_color(tz1_label, GColorBlack);
+  text_layer_set_text_color(tz1_label, GColorWhite);
+  text_layer_set_text(tz1_label, "JST");
+  text_layer_add_to_layer(tz1_label, tz1);
+
   tz2 = layer_create(bounds);
   layer_set_update_proc(tz2, layer_update_tz_2);
 
-  dial = layer_create(bounds);
-  layer_add_to_layer(main_tz, dial);
-  layer_add_to_layer(tz1, dial);
-  layer_add_to_layer(tz2, dial);
-  layer_add_to_layer(dial, background);
+  tz2_label = text_layer_create(GRect(0, 0, 28, 14));
+  text_layer_set_background_color(tz2_label, GColorBlack);
+  text_layer_set_text_color(tz2_label, GColorWhite);
+  text_layer_set_text(tz2_label, "PST");
+  text_layer_add_to_layer(tz2_label, tz2);
+
+  inner_dial = layer_create(bounds);
+  layer_set_update_proc(inner_dial, layer_update_inner_dial);
+
+  outer_dial = layer_create(bounds);
+  layer_add_to_layer(main_tz, inner_dial);
+  layer_add_to_layer(inner_dial, outer_dial);
+
+  layer_add_to_layer(tz1, outer_dial);
+  layer_add_to_layer(tz2, outer_dial);
+  layer_add_to_layer(outer_dial, background);
 
   layer_add_to_window(background, window);
 }
