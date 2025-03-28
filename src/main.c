@@ -4,9 +4,10 @@
 #include "@pebble-libraries/pbl-display/pbl-display.h"
 #include "@pebble-libraries/pbl-math/pbl-math.h"
 
-#define FONT_KEY "FONT_KEY_GOTHIC_14"
 #define FONT_SIZE 14
 #define DIAL_INSET FONT_SIZE
+static GFont font_10;
+static GFont font_12;
 
 /**
  * Handle time tick event
@@ -20,8 +21,6 @@ tick_handler(struct tm *tick_time, TimeUnits units_changed)
 
 void draw_hours(uint64_t inset, uint8_t digit_shift, GColor color, GContext *context)
 {
-  GFont font = fonts_get_system_font(FONT_KEY);
-
   uint8_t square_face_positions_buffer[12][2];
   square_face_positions(FONT_SIZE, inset, inset, square_face_positions_buffer);
 
@@ -30,17 +29,25 @@ void draw_hours(uint64_t inset, uint8_t digit_shift, GColor color, GContext *con
     uint8_t x_coord = square_face_positions_buffer[i][0];
     uint8_t y_coord = square_face_positions_buffer[i][1];
 
+    uint8_t actual_hour = ((i + digit_shift) % 12) + 1;
+    uint8_t number_height = FONT_SIZE + 4;
+    uint8_t number_width = FONT_SIZE;
+    if (actual_hour > 9)
+    {
+      number_width = FONT_SIZE * 2;
+    }
+
     char digits[3];
-    pbl_itoa(((i + digit_shift) % 12) + 1, digits, 10);
+    pbl_itoa(actual_hour, digits, 10);
     graphics_context_set_text_color(context, color);
-    graphics_draw_text(context, digits, font, GRect(x_coord, y_coord, FONT_SIZE, FONT_SIZE), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
+    graphics_draw_text(context, digits, font_10, GRect(x_coord, y_coord, number_height, number_width), GTextOverflowModeFill, GTextAlignmentCenter, NULL);
   }
 }
 
 void layer_update_inner_dial(Layer *layer, GContext *context)
 {
   graphics_context_set_fill_color(context, GColorWhite);
-  graphics_fill_rect(context, GRect(30, 30, DISPLAY_WIDTH - 56, DISPLAY_HEIGHT - 56), 6, GCornersAll);
+  graphics_fill_rect(context, GRect((DIAL_INSET * 2) + 6, (DIAL_INSET * 2) + 6, DISPLAY_WIDTH - (DIAL_INSET * 4) - 10, DISPLAY_HEIGHT - (DIAL_INSET * 4) - 10), 6, GCornersAll);
 
   graphics_context_set_stroke_color(context, GColorBlack);
   graphics_context_set_stroke_width(context, 3);
@@ -56,7 +63,7 @@ void layer_update_inner_dial(Layer *layer, GContext *context)
  */
 void layer_update_tz_2(Layer *layer, GContext *context)
 {
-  draw_hours(0, 9, GColorWhite, context);
+  draw_hours(4, 9, GColorWhite, context);
 }
 
 /**
@@ -66,7 +73,7 @@ void layer_update_tz_2(Layer *layer, GContext *context)
  */
 void layer_update_tz_1(Layer *layer, GContext *context)
 {
-  draw_hours(14, 11, GColorWhite, context);
+  draw_hours(FONT_SIZE + 4, 11, GColorWhite, context);
 }
 
 /**
@@ -76,7 +83,7 @@ void layer_update_tz_1(Layer *layer, GContext *context)
  */
 void layer_update_main_tz(Layer *layer, GContext *context)
 {
-  draw_hours(28, 0, GColorBlack, context);
+  draw_hours((FONT_SIZE * 2) + 4, 0, GColorBlack, context);
 }
 
 /**
@@ -95,7 +102,8 @@ static void main_window_load(Window *window)
   tz1 = layer_create(bounds);
   layer_set_update_proc(tz1, layer_update_tz_1);
 
-  tz1_label = text_layer_create(GRect(0, 14, 28, 14));
+  tz1_label = text_layer_create(GRect(0, FONT_SIZE, FONT_SIZE * 2, FONT_SIZE));
+  text_layer_set_font(tz1_label, font_12);
   text_layer_set_background_color(tz1_label, GColorBlack);
   text_layer_set_text_color(tz1_label, GColorWhite);
   text_layer_set_text(tz1_label, "JST");
@@ -104,7 +112,8 @@ static void main_window_load(Window *window)
   tz2 = layer_create(bounds);
   layer_set_update_proc(tz2, layer_update_tz_2);
 
-  tz2_label = text_layer_create(GRect(0, 0, 28, 14));
+  tz2_label = text_layer_create(GRect(0, 0, FONT_SIZE * 2, FONT_SIZE));
+  text_layer_set_font(tz2_label, font_12);
   text_layer_set_background_color(tz2_label, GColorBlack);
   text_layer_set_text_color(tz2_label, GColorWhite);
   text_layer_set_text(tz2_label, "PST");
@@ -138,6 +147,8 @@ static void main_window_unload(Window *window)
  */
 static void init()
 {
+  font_10 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_WHITE_RABBIT_10));
+  font_12 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_WHITE_RABBIT_12));
   main_window = window_create();
   window_handlers(main_window, main_window_load, main_window_unload);
   window_stack_push(main_window, true);

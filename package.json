@@ -1,0 +1,41 @@
+{
+    "name": "worldtime",
+    "author": "James Downs",
+    "version": "1.0",
+    "keywords": [
+        "pebble-app"
+    ],
+    "private": true,
+    "dependencies": {},
+    "pebble": {
+        "displayName": "World Time",
+        "uuid": "d01b55b2-449e-4703-bf0d-0c6b61a7de85",
+        "sdkVersion": "3",
+        "enableMultiJS": false,
+        "capabilities": [],
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite",
+            "emery"
+        ],
+        "watchapp": {
+            "watchface": true
+        },
+        "messageKeys": [],
+        "resources": {
+            "media": [
+                {
+                    "type": "font",
+                    "name": "FONT_WHITE_RABBIT_10",
+                    "file": "fonts/white-rabbit.ttf"
+                },
+                {
+                    "type": "font",
+                    "name": "FONT_WHITE_RABBIT_12",
+                    "file": "fonts/white-rabbit.ttf"
+                }
+            ]
+        }
+    }
+}
